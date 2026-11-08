@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KShader Wasm Preview</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+        }
+
+        #app-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #compose-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: none;
+        }
+
+        #preview-card {
+            position: relative;
+            z-index: 10;
+            max-width: 520px;
+            width: 90%;
+            padding: 32px 28px;
+            text-align: center;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.15);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .badge-wasm {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .btn-run {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .btn-run:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
+            filter: brightness(1.1);
+        }
+
+        .btn-run:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-run:disabled {
+            opacity: 0.75;
+            cursor: wait;
+        }
+
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Top HUD when rendering */
+        #render-hud {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .hud-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 12px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .hud-btn {
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .hud-btn:hover {
+            background: rgba(30, 41, 59, 0.9);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-wrapper">
+        <div id="render-hud">
+            <div class="hud-status">
+                <div class="pulse-dot"></div>
+                <span>SkSL Raymarching Tunnel (Live)</span>
+            </div>
+            <button class="hud-btn" onclick="location.reload()">↺ Reset</button>
+        </div>
+
+        <div id="preview-card">
+            <div class="badge-row">
+                <span class="badge">Kotlin Multiplatform</span>
+                <span class="badge badge-wasm">WebAssembly</span>
+                <span class="badge">Compose</span>
+            </div>
+            <h1 class="title">KShader Wasm Demo</h1>
+            <p class="description">
+                Interactive real-time raymarching tunnel shader authored with the <strong>KShader</strong> Kotlin eDSL and rendered via Compose Multiplatform on WebAssembly.
+            </p>
+            <button id="run-btn" class="btn-run" onclick="startRender()">
+                <div id="btn-spinner" class="spinner"></div>
+                <span id="btn-text">▶ Run Render</span>
+            </button>
+        </div>
+
+        <div id="compose-container"></div>
+    </div>
+
+    <script type="application/javascript">
+        let isStarted = false;
+
+        function startRender() {
+            if (isStarted) return;
+            isStarted = true;
+
+            const runBtn = document.getElementById('run-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('btn-spinner');
+            const previewCard = document.getElementById('preview-card');
+            const container = document.getElementById('compose-container');
+            const hud = document.getElementById('render-hud');
+
+            runBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Loading WebAssembly...';
+
+            container.style.display = 'block';
+
+            const script = document.createElement('script');
+            script.type = 'application/javascript';
+            script.src = 'sample-wasm.js';
+
+            script.onload = () => {
+                previewCard.style.opacity = '0';
+                previewCard.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    previewCard.style.display = 'none';
+                    hud.style.display = 'flex';
+                }, 400);
+            };
+
+            script.onerror = (err) => {
+                btnText.textContent = 'Failed to load Wasm';
+                spinner.style.display = 'none';
+                runBtn.disabled = false;
+                console.error('Error loading sample-wasm.js', err);
+            };
+
+            document.body.appendChild(script);
+        }
+
+        // Auto-run if requested via URL query param ?autorun=true or hash #run
+        if (new URLSearchParams(window.location.search).has('autorun') || window.location.hash === '#run') {
+            window.addEventListener('DOMContentLoaded', startRender);
+        }
+    </script>
+</body>
+</html>

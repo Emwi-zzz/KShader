@@ -1,0 +1,10 @@
+package dev.emwi.zzz.kotlin.sksl.dsl.core.scope
+
+import dev.emwi.zzz.kotlin.sksl.dsl.core.internal.scope.ScopeCompanion
+import dev.emwi.zzz.kotlin.sksl.dsl.core.internal.scope.ShaderContext
+
+class LoopScope internal constructor(ctx: ShaderContext) : ShaderScope(ctx) {
+    internal companion object : ScopeCompanion<LoopScope>(::LoopScope)
+}
+
+typealias ForScope = LoopScope
