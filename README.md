@@ -1,5 +1,7 @@
 # KShader
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 > ⚠️ **Notice: Prototype & Active Refactoring**  
 > This project is currently an experimental prototype. The codebase is under active development, requires refactoring, and the API is not yet stable.
 
@@ -123,3 +125,9 @@ To build the static distribution for GitHub Pages:
 - [`core`](core): Kotlin Multiplatform core library containing the AST, scopes, and types for the eDSL.
 - [`sksl-typegen`](sksl-typegen): Code generation tool producing type-safe wrappers for SkSL types, intrinsics, and operations.
 - [`samples/wasm`](samples/wasm): Independent sample project rendering the shader via Compose Multiplatform on WebAssembly.
+
+---
+
+## 📄 License
+
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
